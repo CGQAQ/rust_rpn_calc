@@ -2,7 +2,33 @@ fn main() {
     println!("Hello, world!");
 }
 
-enum Op {}
+#[derive(Debug, Eq, PartialEq)]
+enum Op_t {
+    Plus,
+    Minus,
+    Multi,
+    Div,
+    Pow,
+    Mod,
+    Factorial,
+    Par_left,  // (
+    Par_right, // )
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Func_t {
+    Sum,
+    Average,
+    Sqrt,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+//['+', '-', '*', '/', '^', '%', '!', '(', ')']
+enum Token {
+    Op(Op_t),
+    Num(i64),
+    Func(Func_t),
+}
 
 #[derive(Debug, Eq, PartialEq)]
 enum TokenState {
@@ -12,8 +38,90 @@ enum TokenState {
     EMPTY,
 }
 
-fn tokenizer(s: &str) -> Result<Vec<String>, String> {
-    let mut result: Vec<String> = vec![];
+#[test]
+fn test_tokenizer() {
+    let actual = tokenizer("12+3").unwrap();
+    assert_eq!(
+        vec![Token::Num(12), Token::Op(Op_t::Plus), Token::Num(3)],
+        actual
+    );
+    let actual = tokenizer("12*3+5/2").unwrap();
+    assert_eq!(
+        vec![
+            Token::Num(12),
+            Token::Op(Op_t::Multi),
+            Token::Num(3),
+            Token::Op(Op_t::Plus),
+            Token::Num(5),
+            Token::Op(Op_t::Div),
+            Token::Num(2)
+        ],
+        actual
+    );
+    let actual = tokenizer("(2+2)! % 5^2").unwrap();
+    assert_eq!(
+        vec![
+            Token::Op(Op_t::Par_left),
+            Token::Num(2),
+            Token::Op(Op_t::Plus),
+            Token::Num(2),
+            Token::Op(Op_t::Par_right),
+            Token::Op(Op_t::Factorial),
+            Token::Op(Op_t::Mod),
+            Token::Num(5),
+            Token::Op(Op_t::Pow),
+            Token::Num(2)
+        ],
+        actual
+    );
+}
+
+fn to_token(cw: TokenState, s: String) -> Result<Token, ()> {
+    match cw {
+        TokenState::CHAR => {
+            if s == "sum".to_owned() {
+                Ok(Token::Func(Func_t::Sum))
+            } else if s == "average".to_owned() {
+                Ok(Token::Func(Func_t::Average))
+            } else if s == "sqrt".to_owned() {
+                Ok(Token::Func(Func_t::Sqrt))
+            } else {
+                Err(())
+            }
+        }
+        TokenState::NUM => match s.parse::<i64>() {
+            Ok(n) => Ok(Token::Num(n)),
+            Err(_) => Err(()),
+        },
+
+        //     enum Op_t {
+        // Plus,
+        // Minus,
+        // Multi,
+        // Div,
+        // Pow,
+        // Mod,
+        // Factorial,
+        // Par_left,  // (
+        // Par_right, // )
+        TokenState::SYM => match &s as &str {
+            "+" => Ok(Token::Op(Op_t::Plus)),
+            "-" => Ok(Token::Op(Op_t::Minus)),
+            "*" => Ok(Token::Op(Op_t::Multi)),
+            "/" => Ok(Token::Op(Op_t::Div)),
+            "^" => Ok(Token::Op(Op_t::Pow)),
+            "%" => Ok(Token::Op(Op_t::Mod)),
+            "!" => Ok(Token::Op(Op_t::Factorial)),
+            "(" => Ok(Token::Op(Op_t::Par_left)),
+            ")" => Ok(Token::Op(Op_t::Par_right)),
+            _ => Err(()),
+        },
+        TokenState::EMPTY => Err(()),
+    }
+}
+
+fn tokenizer(s: &str) -> Result<Vec<Token>, String> {
+    let mut result: Vec<Token> = vec![];
     let mut buf: String = String::new();
     let mut currentState = TokenState::EMPTY;
     for ch in s.chars() {
@@ -23,7 +131,7 @@ fn tokenizer(s: &str) -> Result<Vec<String>, String> {
                     && (!&buf.is_empty() || currentState == TokenState::EMPTY)
                 {
                     if currentState != TokenState::EMPTY {
-                        result.push(buf.clone());
+                        result.push(to_token(currentState, buf.clone()).unwrap());
                     }
                     buf.clear();
                     buf.push(ch);
@@ -36,7 +144,7 @@ fn tokenizer(s: &str) -> Result<Vec<String>, String> {
             }
             symb if ['+', '-', '*', '/', '^', '%', '!', '(', ')'].contains(&ch) => {
                 if !buf.is_empty() {
-                    result.push(buf.clone());
+                    result.push(to_token(currentState, buf.clone()).unwrap());
                     buf.clear();
                 }
                 buf.push(symb);
@@ -48,7 +156,7 @@ fn tokenizer(s: &str) -> Result<Vec<String>, String> {
                     && (!buf.is_empty() || currentState == TokenState::EMPTY)
                 {
                     if currentState != TokenState::EMPTY {
-                        result.push(buf.clone());
+                        result.push(to_token(currentState, buf.clone()).unwrap());
                     }
                     buf.clear();
                     buf.push(ch);
@@ -64,45 +172,12 @@ fn tokenizer(s: &str) -> Result<Vec<String>, String> {
         }
     }
     if !buf.is_empty() {
-        result.push(buf)
+        result.push(to_token(currentState, buf).unwrap())
     }
     Ok(result)
 }
 
 #[test]
-fn test_tokenizer() {
-    let actual = tokenizer("12+3").unwrap();
-    assert_eq!(
-        vec!["12".to_string(), "+".to_string(), "3".to_string()],
-        actual
-    );
-    let actual = tokenizer("12*3+5/2").unwrap();
-    assert_eq!(
-        vec![
-            "12".to_string(),
-            "*".to_string(),
-            "3".to_string(),
-            "+".to_string(),
-            "5".to_string(),
-            "/".to_string(),
-            "2".to_string()
-        ],
-        actual
-    );
-    let actual = tokenizer("(2+2)! % 5^2").unwrap();
-    assert_eq!(
-        vec![
-            "(".to_string(),
-            "2".to_string(),
-            "+".to_string(),
-            "2".to_string(),
-            ")".to_string(),
-            "!".to_string(),
-            "%".to_string(),
-            "5".to_string(),
-            "^".to_string(),
-            "2".to_string()
-        ],
-        actual
-    );
-}
+fn test_generate_rpn() {}
+
+fn generate_rpn(tokens: Vec<String>) {}
