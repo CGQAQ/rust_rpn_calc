@@ -15,7 +15,7 @@ pub fn calculate(expr: &str) -> i64 {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-enum Op_t {
+enum Op {
     Plus,
     Minus,
     Multi,
@@ -23,22 +23,22 @@ enum Op_t {
     Pow,
     Mod,
     Factorial,
-    Par_left,  // (
-    Par_right, // )
+    ParLeft,  // (
+    ParRight, // )
 }
 
 fn get_op_precedence(op: &Token) -> i32 {
     if let Token::Op(op) = op {
         return match op {
-            Op_t::Plus => 2,
-            Op_t::Minus => 2,
-            Op_t::Multi => 3,
-            Op_t::Div => 3,
-            Op_t::Pow => 4,
-            Op_t::Mod => 3,
-            Op_t::Factorial => 6,
-            Op_t::Par_left => 5,
-            Op_t::Par_right => 5,
+            Op::Plus => 2,
+            Op::Minus => 2,
+            Op::Multi => 3,
+            Op::Div => 3,
+            Op::Pow => 4,
+            Op::Mod => 3,
+            Op::Factorial => 6,
+            Op::ParLeft => 5,
+            Op::ParRight => 5,
         };
     }
     return -1;
@@ -54,22 +54,22 @@ enum Assoc {
 fn get_op_associativity(op: &Token) -> Assoc {
     if let Token::Op(op) = op {
         return match op {
-            Op_t::Plus => Assoc::Left,
-            Op_t::Minus => Assoc::Left,
-            Op_t::Multi => Assoc::Left,
-            Op_t::Div => Assoc::Left,
-            Op_t::Pow => Assoc::Right,
-            Op_t::Mod => Assoc::Left,
-            Op_t::Factorial => Assoc::Invalid,
-            Op_t::Par_left => Assoc::Invalid,
-            Op_t::Par_right => Assoc::Invalid,
+            Op::Plus => Assoc::Left,
+            Op::Minus => Assoc::Left,
+            Op::Multi => Assoc::Left,
+            Op::Div => Assoc::Left,
+            Op::Pow => Assoc::Right,
+            Op::Mod => Assoc::Left,
+            Op::Factorial => Assoc::Invalid,
+            Op::ParLeft => Assoc::Invalid,
+            Op::ParRight => Assoc::Invalid,
         };
     }
     return Assoc::Invalid;
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum Func_t {
+enum Func {
     Sum,
     Average,
     Sqrt,
@@ -78,9 +78,9 @@ enum Func_t {
 #[derive(Debug, PartialEq, Eq, Clone)]
 //['+', '-', '*', '/', '^', '%', '!', '(', ')']
 enum Token {
-    Op(Op_t),
+    Op(Op),
     Num(i64),
-    Func(Func_t),
+    Func(Func),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -95,18 +95,18 @@ enum TokenState {
 fn test_tokenizer() {
     let actual = tokenizer("12+3").unwrap();
     assert_eq!(
-        vec![Token::Num(12), Token::Op(Op_t::Plus), Token::Num(3)],
+        vec![Token::Num(12), Token::Op(Op::Plus), Token::Num(3)],
         actual
     );
     let actual = tokenizer("12*3+5/2").unwrap();
     assert_eq!(
         vec![
             Token::Num(12),
-            Token::Op(Op_t::Multi),
+            Token::Op(Op::Multi),
             Token::Num(3),
-            Token::Op(Op_t::Plus),
+            Token::Op(Op::Plus),
             Token::Num(5),
-            Token::Op(Op_t::Div),
+            Token::Op(Op::Div),
             Token::Num(2)
         ],
         actual
@@ -114,15 +114,15 @@ fn test_tokenizer() {
     let actual = tokenizer("(2+2)! % 5^2").unwrap();
     assert_eq!(
         vec![
-            Token::Op(Op_t::Par_left),
+            Token::Op(Op::ParLeft),
             Token::Num(2),
-            Token::Op(Op_t::Plus),
+            Token::Op(Op::Plus),
             Token::Num(2),
-            Token::Op(Op_t::Par_right),
-            Token::Op(Op_t::Factorial),
-            Token::Op(Op_t::Mod),
+            Token::Op(Op::ParRight),
+            Token::Op(Op::Factorial),
+            Token::Op(Op::Mod),
             Token::Num(5),
-            Token::Op(Op_t::Pow),
+            Token::Op(Op::Pow),
             Token::Num(2)
         ],
         actual
@@ -133,11 +133,11 @@ fn to_token(cw: TokenState, s: String) -> Result<Token, ()> {
     match cw {
         TokenState::CHAR => {
             if s == "sum".to_owned() {
-                Ok(Token::Func(Func_t::Sum))
+                Ok(Token::Func(Func::Sum))
             } else if s == "average".to_owned() {
-                Ok(Token::Func(Func_t::Average))
+                Ok(Token::Func(Func::Average))
             } else if s == "sqrt".to_owned() {
-                Ok(Token::Func(Func_t::Sqrt))
+                Ok(Token::Func(Func::Sqrt))
             } else {
                 Err(())
             }
@@ -158,15 +158,15 @@ fn to_token(cw: TokenState, s: String) -> Result<Token, ()> {
         // Par_left,  // (
         // Par_right, // )
         TokenState::SYM => match &s as &str {
-            "+" => Ok(Token::Op(Op_t::Plus)),
-            "-" => Ok(Token::Op(Op_t::Minus)),
-            "*" => Ok(Token::Op(Op_t::Multi)),
-            "/" => Ok(Token::Op(Op_t::Div)),
-            "^" => Ok(Token::Op(Op_t::Pow)),
-            "%" => Ok(Token::Op(Op_t::Mod)),
-            "!" => Ok(Token::Op(Op_t::Factorial)),
-            "(" => Ok(Token::Op(Op_t::Par_left)),
-            ")" => Ok(Token::Op(Op_t::Par_right)),
+            "+" => Ok(Token::Op(Op::Plus)),
+            "-" => Ok(Token::Op(Op::Minus)),
+            "*" => Ok(Token::Op(Op::Multi)),
+            "/" => Ok(Token::Op(Op::Div)),
+            "^" => Ok(Token::Op(Op::Pow)),
+            "%" => Ok(Token::Op(Op::Mod)),
+            "!" => Ok(Token::Op(Op::Factorial)),
+            "(" => Ok(Token::Op(Op::ParLeft)),
+            ")" => Ok(Token::Op(Op::ParRight)),
             _ => Err(()),
         },
         TokenState::EMPTY => Err(()),
@@ -176,103 +176,87 @@ fn to_token(cw: TokenState, s: String) -> Result<Token, ()> {
 fn tokenizer(s: &str) -> Result<Vec<Token>, String> {
     let mut result: Vec<Token> = vec![];
     let mut buf: String = String::new();
-    let mut currentState = TokenState::EMPTY;
+    let mut current_state = TokenState::EMPTY;
     for ch in s.chars() {
         match ch {
             '0'..='9' => {
-                if currentState != TokenState::NUM
-                    && (!&buf.is_empty() || currentState == TokenState::EMPTY)
+                if current_state != TokenState::NUM
+                    && (!&buf.is_empty() || current_state == TokenState::EMPTY)
                 {
-                    if currentState != TokenState::EMPTY {
-                        result.push(to_token(currentState, buf.clone()).unwrap());
+                    if current_state != TokenState::EMPTY {
+                        result.push(to_token(current_state, buf.clone()).unwrap());
                     }
                     buf.clear();
                     buf.push(ch);
-                } else if currentState == TokenState::NUM {
+                } else if current_state == TokenState::NUM {
                     buf.push(ch);
-                } else if currentState != TokenState::EMPTY {
+                } else if current_state != TokenState::EMPTY {
                     return Err("currentState is not NUM but buf is empty".to_string());
                 }
-                currentState = TokenState::NUM;
+                current_state = TokenState::NUM;
             }
             symb if ['+', '-', '*', '/', '^', '%', '!', '(', ')'].contains(&ch) => {
                 if !buf.is_empty() {
-                    result.push(to_token(currentState, buf.clone()).unwrap());
+                    result.push(to_token(current_state, buf.clone()).unwrap());
                     buf.clear();
                 }
                 buf.push(symb);
 
-                currentState = TokenState::SYM;
+                current_state = TokenState::SYM;
             }
             c if ch.is_ascii_alphabetic() => {
-                if currentState != TokenState::CHAR
-                    && (!buf.is_empty() || currentState == TokenState::EMPTY)
+                if current_state != TokenState::CHAR
+                    && (!buf.is_empty() || current_state == TokenState::EMPTY)
                 {
-                    if currentState != TokenState::EMPTY {
-                        result.push(to_token(currentState, buf.clone()).unwrap());
+                    if current_state != TokenState::EMPTY {
+                        result.push(to_token(current_state, buf.clone()).unwrap());
                     }
                     buf.clear();
                     buf.push(ch);
-                } else if currentState == TokenState::CHAR {
+                } else if current_state == TokenState::CHAR {
                     buf.push(c.to_ascii_lowercase())
-                } else if currentState != TokenState::EMPTY {
+                } else if current_state != TokenState::EMPTY {
                     return Err("currentState is no CHAR but buf is empty".to_string());
                 }
-                currentState = TokenState::CHAR;
+                current_state = TokenState::CHAR;
             }
             ' ' => {}
             _ => return Err(format!("unrecognized token: {}", ch)),
         }
     }
     if !buf.is_empty() {
-        result.push(to_token(currentState, buf).unwrap())
+        result.push(to_token(current_state, buf).unwrap())
     }
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn rpn_to_string(tokens: Vec<Token>) -> String {
     let mut result = String::new();
     for t in tokens {
         match t {
             Token::Op(op) => match op {
-                Op_t::Plus => result += "+ ",
-                Op_t::Minus => result += "- ",
-                Op_t::Multi => result += "* ",
-                Op_t::Div => result += "/ ",
-                Op_t::Pow => result += "^ ",
-                Op_t::Mod => result += "% ",
-                Op_t::Factorial => result += "! ",
-                Op_t::Par_left => result += "( ",
-                Op_t::Par_right => result += ") ",
+                Op::Plus => result += "+ ",
+                Op::Minus => result += "- ",
+                Op::Multi => result += "* ",
+                Op::Div => result += "/ ",
+                Op::Pow => result += "^ ",
+                Op::Mod => result += "% ",
+                Op::Factorial => result += "! ",
+                Op::ParLeft => result += "( ",
+                Op::ParRight => result += ") ",
             },
             Token::Num(n) => result += &format!("{} ", n),
-            Token::Func(f) => result += &format!("{} ", stringify!(f)),
+            Token::Func(_) => result += &format!("{} ", stringify!(f)),
         }
     }
-    result
+    result.trim_end().to_owned()
 }
 
 #[test]
 fn test_generate_rpn() {
     let actual = generate_rpn(tokenizer("3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3").unwrap());
-    assert_eq!(
-        vec![
-            Token::Num(3),
-            Token::Num(4),
-            Token::Num(2),
-            Token::Op(Op_t::Multi),
-            Token::Num(1),
-            Token::Num(5),
-            Token::Op(Op_t::Minus),
-            Token::Num(2),
-            Token::Num(3),
-            Token::Op(Op_t::Pow),
-            Token::Op(Op_t::Pow),
-            Token::Op(Op_t::Div),
-            Token::Op(Op_t::Plus)
-        ],
-        actual
-    );
+    assert_eq!("3 4 2 * 1 5 - 2 3 ^ ^ / +", rpn_to_string(actual));
     // println!("{:?}", generate_rpn(tokenizer("(8/2) - 3 * 2").unwrap()))
     // println!(
     //     "{}",
@@ -292,16 +276,16 @@ fn generate_rpn(tokens: Vec<Token>) -> Vec<Token> {
             f @ Token::Func(_) => {
                 stack.push(f.clone());
             }
-            lp @ Token::Op(Op_t::Par_left) => {
+            lp @ Token::Op(Op::ParLeft) => {
                 stack.push(lp.clone());
             }
-            Token::Op(Op_t::Par_right) => {
-                while stack.last().unwrap().clone() != Token::Op(Op_t::Par_left) {
+            Token::Op(Op::ParRight) => {
+                while stack.last().unwrap().clone() != Token::Op(Op::ParLeft) {
                     if let Some(v) = stack.pop() {
                         output.push(v);
                     }
                 }
-                if stack.last().unwrap().clone() == Token::Op(Op_t::Par_left) {
+                if stack.last().unwrap().clone() == Token::Op(Op::ParLeft) {
                     stack.pop();
                 }
             }
@@ -314,7 +298,7 @@ fn generate_rpn(tokens: Vec<Token>) -> Vec<Token> {
                     && ((get_op_precedence(stack.last().unwrap()) > get_op_precedence(o))
                         || ((get_op_precedence(stack.last().unwrap()) == get_op_precedence(o))
                             && get_op_associativity(stack.last().unwrap()) == Assoc::Left))
-                    && *stack.last().unwrap() != Token::Op(Op_t::Par_left)
+                    && *stack.last().unwrap() != Token::Op(Op::ParLeft)
                 {
                     if let Some(v) = stack.pop() {
                         output.push(v);
@@ -346,42 +330,42 @@ fn calc(rpn: Vec<Token>) -> i64 {
         } else {
             match t {
                 Token::Op(op) => match op {
-                    Op_t::Plus => {
+                    Op::Plus => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l + r);
                     }
-                    Op_t::Minus => {
+                    Op::Minus => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l + r);
                     }
-                    Op_t::Multi => {
+                    Op::Multi => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l * r);
                     }
-                    Op_t::Div => {
+                    Op::Div => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l / r);
                     }
-                    Op_t::Pow => {
+                    Op::Pow => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l.pow(r as u32));
                     }
-                    Op_t::Mod => {
+                    Op::Mod => {
                         let r = stack.pop().unwrap();
                         let l = stack.pop().unwrap();
                         stack.push(l % r);
                     }
-                    Op_t::Factorial => {
+                    Op::Factorial => {
                         let r = stack.pop().unwrap();
                         stack.push(factorial(r));
                     }
-                    Op_t::Par_left => {}
-                    Op_t::Par_right => {}
+                    Op::ParLeft => {}
+                    Op::ParRight => {}
                 },
                 Token::Func(_) => {}
                 Token::Num(_) => {}
